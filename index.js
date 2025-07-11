@@ -1,61 +1,106 @@
-document.addEventListener("DOMContentLoaded", () => {
-    let balance = 0.0000000000;
-    let miningSpeed = 0.0000000010; // Velocidade inicial de mineração
-    let miningInterval;
-    let countdownTime = 12 * 60 * 60; // 12 horas em segundos
-    let countdownInterval;
+// index.js
 
-    // Exibe o saldo inicial
-    const balanceElement = document.getElementById('balance');
-    const timerElement = document.getElementById('timer');
-    const speedElement = document.getElementById('speed');
+document.addEventListener('DOMContentLoaded', () => {
+  const balanceElem = document.getElementById('balance');
+  const speedElem = document.getElementById('speed');
+  const timerElem = document.getElementById('timer');
+  const startBtn = document.getElementById('startButton');
+  const withdrawBtn = document.getElementById('withdrawButton');
+  const walletInput = document.getElementById('wallet');
+  const withdrawAmountInput = document.getElementById('withdrawAmount');
+  const withdrawMessage = document.getElementById('withdrawMessage');
 
-    if (!balanceElement || !timerElement || !speedElement) {
-        console.error('Elementos HTML com os IDs balance, timer ou speed não foram encontrados.');
-        return;
+  let mining = false;
+  let balance = 0.0000000000;
+  let speed = 10.0; // GH/s
+  let timer = 12 * 60 * 60; // 12 hours in seconds
+  let miningInterval = null;
+  let timerInterval = null;
+  const minWithdraw = 0.00001; // mínimo fictício para saque
+
+  function formatBTC(value) {
+    return value.toFixed(10);
+  }
+
+  function formatTime(seconds) {
+    const h = String(Math.floor(seconds / 3600)).padStart(2, '0');
+    const m = String(Math.floor((seconds % 3600) / 60)).padStart(2, '0');
+    const s = String(seconds % 60).padStart(2, '0');
+    return `${h}:${m}:${s}`;
+  }
+
+  function updateUI() {
+    balanceElem.textContent = formatBTC(balance);
+    speedElem.textContent = `${speed.toFixed(1)} GH/s`;
+    timerElem.textContent = formatTime(timer);
+  }
+
+  function startMining() {
+    if (mining) return;
+
+    mining = true;
+    startBtn.disabled = true;
+    withdrawMessage.textContent = '';
+
+    miningInterval = setInterval(() => {
+      // Simulação: quanto maior speed, mais "BTC" ganha por segundo
+      const btcPerSecond = speed * 0.0000000001; // Parâmetro de recompensa fictícia
+      balance += btcPerSecond;
+      updateUI();
+    }, 1000);
+
+    timerInterval = setInterval(() => {
+      if (timer > 0) {
+        timer--;
+        updateUI();
+      } else {
+        stopMining();
+        startBtn.disabled = false;
+      }
+    }, 1000);
+  }
+
+  function stopMining() {
+    mining = false;
+    clearInterval(miningInterval);
+    clearInterval(timerInterval);
+  }
+
+  function handleWithdraw() {
+    const wallet = walletInput.value.trim();
+    const amount = parseFloat(withdrawAmountInput.value);
+
+    withdrawMessage.style.color = "red";
+
+    if (!wallet) {
+      withdrawMessage.textContent = 'Por favor, insira o endereço BTC.';
+      return;
+    }
+    if (!amount || amount <= 0) {
+      withdrawMessage.textContent = 'Valor de saque inválido.';
+      return;
+    }
+    if (amount < minWithdraw) {
+      withdrawMessage.textContent = `O saque mínimo é ${minWithdraw} BTC.`;
+      return;
+    }
+    if (amount > balance) {
+      withdrawMessage.textContent = 'Saldo insuficiente.';
+      return;
     }
 
-    balanceElement.innerText = balance.toFixed(10);
+    // Simulação: "processa" o saque
+    balance -= amount;
+    updateUI();
+    withdrawMessage.style.color = "green";
+    withdrawMessage.textContent = `Saque de ${amount} BTC para ${wallet} processado! (Simulação)`;
+    withdrawAmountInput.value = '';
+  }
 
-    // Função para iniciar a mineração
-    function startMining() {
-        // Inicia o cronômetro de contagem regressiva
-        if (!countdownInterval) {
-            countdownInterval = setInterval(updateCountdown, 1000);
-        }
+  startBtn.addEventListener('click', startMining);
+  withdrawBtn.addEventListener('click', handleWithdraw);
 
-        // Inicia o processo de mineração
-        if (!miningInterval) {
-            miningInterval = setInterval(() => {
-                balance += miningSpeed;
-                balanceElement.innerText = balance.toFixed(10);
-            }, 1000); // Incrementa o saldo a cada segundo
-        }
-    }
-
-    // Função para atualizar o cronômetro
-    function updateCountdown() {
-        if (countdownTime > 0) {
-            countdownTime--;
-            const hours = Math.floor(countdownTime / 3600);
-            const minutes = Math.floor((countdownTime % 3600) / 60);
-            const seconds = countdownTime % 60;
-            timerElement.innerText = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-        } else {
-            clearInterval(countdownInterval);
-            clearInterval(miningInterval);
-            alert('Tempo de mineração encerrado!');
-        }
-    }
-
-    // Função para acelerar a mineração
-    function accelerateMining() {
-        miningSpeed += 0.0000000010; // Aumenta a velocidade
-        speedElement.innerText = `${(miningSpeed * 1e9).toFixed(1)} GH/s`;
-    }
-
-    // Event listeners para os botões
-    document.getElementById('startButton').addEventListener('click', startMining);
-    document.getElementById('accelerateButton').addEventListener('click', accelerateMining);
-});
-
+  // Simular aceleração de mineração (botão "Acelere sua mineração")
+  const accelerateBtn = document.getElementById('accelerateButton');
+  if (accelerateBtn) {
+    accelerateBtn.add
